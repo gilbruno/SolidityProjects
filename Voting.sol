@@ -4,17 +4,9 @@ pragma solidity ^0.8.12;
 
 import "./node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
-/**
-    INFOS : 
-    1) L'admin est un votant
-    2) Les votants peuvent soumettre +sieurs propositions
-    3) Si 2 propositions existantes exaequo, pas obligé de le gérer
-    4) 
-*/
 
 /**
-
- TODO :: Voir la visibilté des fonctions public ==> external
+ * TODO :: Be more accurate on functions visibility
  */
 
 library StringLibrary {
