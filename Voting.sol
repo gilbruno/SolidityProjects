@@ -105,11 +105,20 @@ contract Voting is Ownable {
     }
 
     /**
-     * Modifier that reverts the tranasaction if there are no proposal when the owner close the proposal recording
+     * Modifier that reverts the transaction if there are no proposal when the owner close the proposal recording
      */
     modifier atLeastOneProposal()
     {
         require(proposals.length > 0, "There must be at least one proposal");
+        _;
+    }
+
+    /**
+     * Modifier that reverts the transaction if there are no vote when the owner close the vote recording
+     */
+    modifier atLeastOneVote()
+    {
+        require(atLeast1Vote(), "There must be at least one vote");
         _;
     }
 
@@ -268,13 +277,15 @@ contract Voting is Ownable {
 
     /**
      * End recording Vote
-     * 2 conditions : 
+     * 3 conditions : 
      *     - only the owner can do it
      *     - the current workflow must be "VotingSessionStarted"
+     *     - there must be at least one vote to pick a winner
      */
     function endRecordingVote() external 
         onlyOwner 
-        onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionStarted) {
+        onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionStarted) 
+        atLeastOneVote {
 
         setWorkflowVoteStatus(WorkflowStatus.VotingSessionEnded);
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, WorkflowStatus.VotingSessionEnded);
@@ -381,6 +392,23 @@ contract Voting is Ownable {
             }
         }
         return result;
+    }
+
+    /**
+     * Function that returns true if there are at leastone vote
+     */
+    function atLeast1Vote() private view returns (bool) {
+        uint totalVoteCount;
+        for (uint i = 0; i < proposals.length; i++) {
+            totalVoteCount += proposals[i].voteCount;
+        }
+        if (totalVoteCount == 0) {
+            return false;
+        }
+        else {
+            return true;
+        }
+
     }
 
 }
