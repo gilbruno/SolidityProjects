@@ -190,6 +190,9 @@ contract Voting is Ownable {
 
     /**
      * Start recording proposals of voters
+     *    2 conditions : 
+     *       - Only owner can do it
+     *       - the current workflow must be "RegisteringVoters"
      */
     function startRecordingSessionProposal() external 
         onlyOwner 
