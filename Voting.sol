@@ -262,7 +262,7 @@ contract Voting is Ownable {
      *     - the current workflow must be "VotingSessionStarted"
      *     - a voter must vote only once
      *     - the proposal given by the voter must exist
-     *  TODO : Mettre msg.sender à la place !!
+     *  
      */
     function vote(string memory _proposal) external 
         onlyGrantedVoters(msg.sender) 
