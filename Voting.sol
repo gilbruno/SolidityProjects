@@ -105,11 +105,11 @@ contract Voting is Ownable {
     }
 
     /**
-     * Modifier that indicates if the '_voterAddr' exists in the white list
+     * Modifier that reverts the tranasaction if there are no proposal when the owner close the proposal recording
      */
-    modifier checkWorkflowStatusProposalsRegistrationStarted()
+    modifier atLeastOneProposal()
     {
-        require(workflowVoteStatus == WorkflowStatus.ProposalsRegistrationStarted);
+        require(proposals.length > 0, "There must be at least one proposal");
         _;
     }
 
@@ -218,13 +218,15 @@ contract Voting is Ownable {
 
     /**
      * End recording proposals of voters. 
-     * 2 conditions : 
+     * 3 conditions : 
      *     - only the owner can do it
      *     - the current workflow must be "ProposalsRegistrationStarted"
+     *     - There must be at least 1 proposal
      */
     function endRecordingSessionProposal() external 
         onlyOwner 
-        onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted) {
+        onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
+        atLeastOneProposal {
 
         setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationEnded);
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded);
