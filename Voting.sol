@@ -29,6 +29,7 @@ contract Voting is Ownable {
     uint winningProposalId;
     mapping(address => Voter) public whiteList;
     address[] private voters; //Array of voters that are in the white list
+    uint[] private winners; //Array to handle ex aequo winners
     Proposal[] private proposals;
     WorkflowStatus private workflowVoteStatus;
     bool boolWinnerFound;
@@ -49,6 +50,7 @@ contract Voting is Ownable {
     struct Proposal {
         string description;
         uint voteCount;
+        uint blockTimestampCount;
     }
 
     //------ ENUM ----------------------
@@ -60,9 +62,6 @@ contract Voting is Ownable {
         VotingSessionEnded,
         VotesTallied
     }
-
-    //------ CONSTRUCTOR--------------------
-    constructor() {}
 
     //------ MODIFIERS ----------------------
     /**
@@ -208,7 +207,7 @@ contract Voting is Ownable {
         onlyGrantedVoters(msg.sender) 
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
         checkDuplicateProposal(_proposal) {
-            proposals.push(Proposal({description:_proposal, voteCount:0}));
+            proposals.push(Proposal({description:_proposal, voteCount:0, blockTimestampCount:0}));
     }
 
     /**
@@ -256,7 +255,7 @@ contract Voting is Ownable {
 
         whiteList[msg.sender].hasVoted = true;
         whiteList[msg.sender].votedProposalId = getVoteId(_proposal);
-        incrementVotingCount(_proposal);
+        incrementVotingAndTimestampCount(_proposal);
     }
 
     /**
@@ -286,33 +285,57 @@ contract Voting is Ownable {
         setWorkflowVoteStatus(WorkflowStatus.VotesTallied);
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
 
+        setWinners();
         setWinner();
     }
 
     /**
-     * Function that sets the winner id state variable.
+     * Function that sets the potential winners if ex aequo results
      * Loop through array of Proposals
      */
-    function setWinner() private {
+    function setWinners() private {
         boolWinnerFound = true;
         uint maxCount = 0;
-        uint winnerId;
         for (uint index = 0; index < proposals.length; index++) {
-            if (proposals[index].voteCount > maxCount) {
+            if (proposals[index].voteCount >= maxCount) {
                 maxCount = proposals[index].voteCount;
-                winnerId = index;
+                winners.push(index);       
             }
         }
-        winningProposalId = winnerId;
     }
+
+    /**
+     * Function that sets the winner id state variable.
+     * It depends on the winners length array. 
+     * If length = 1 => No ex aequo. Only 1 winner.
+     * If length > 1 => There are many ex aequo winners. 
+     * I decided the folowing rule : The winner is the proposal that have the minimum blockTimestampCount.
+     * because it means that many voters vote for him until the best vote count before others
+     */
+    function setWinner() private {
+        if (winners.length == 1) {
+            winningProposalId = winners[0];        
+        }
+        else {
+            //I have to find the min blockTimestampCount of proposals
+            uint minBlockTimestampCount = 9999999999;
+            for (uint256 index = 0; index < winners.length; index++) {
+                if (proposals[index].blockTimestampCount < minBlockTimestampCount) {
+                    minBlockTimestampCount = proposals[index].blockTimestampCount;
+                    winningProposalId = index;
+                }
+            }
+        }
+    }    
 
     /**
      * Function that increment the voting count of a proposal
      */
-    function incrementVotingCount(string memory _proposal) private {
+    function incrementVotingAndTimestampCount(string memory _proposal) private {
         for (uint index = 0; index < proposals.length; index++) {
             if (_proposal.equals(proposals[index].description)) {
                 proposals[index].voteCount++;
+                proposals[index].blockTimestampCount += block.timestamp;
                 break;
             }
         }
