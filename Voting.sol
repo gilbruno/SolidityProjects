@@ -136,7 +136,7 @@ contract Voting is Ownable {
      */
     modifier winnerFound()
     {
-        require(boolWinnerFound == true, "The winner has not been found yeyt");
+        require(boolWinnerFound == true, "The winner has not been found yet");
         _;
     }
 
@@ -191,7 +191,10 @@ contract Voting is Ownable {
     /**
      * Start recording proposals of voters
      */
-    function startRecordingSessionProposal() external onlyOwner {
+    function startRecordingSessionProposal() external 
+        onlyOwner 
+        onlyWhenWorkflowStatusIs(WorkflowStatus.RegisteringVoters) {
+
         setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationStarted);
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
     }
