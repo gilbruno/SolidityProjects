@@ -356,11 +356,18 @@ contract Voting is Ownable {
      */
     function _setWinners() private {
         boolWinnerFound = true;
-        uint maxCount = 0;
+        uint maxCount;
+        //1) Loop through the proposals to get the higher score
         for (uint index = 0; index < _proposals.length; index++) {
-            if (_proposals[index].voteCount >= maxCount) {
+            if (_proposals[index].voteCount > maxCount) {
                 maxCount = _proposals[index].voteCount;
-                _winners.push(index);       
+            }
+        }
+
+        //2) Loop through the proposals again to build an array of ex aequo winners
+        for (uint i = 0; i < _proposals.length; i++) {
+            if (_proposals[i].voteCount == maxCount) {
+                _winners.push(i);
             }
         }
     }
