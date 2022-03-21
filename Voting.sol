@@ -100,10 +100,29 @@ contract Voting is Ownable {
     }
 
     /**
+     * Modifier that indicates if the '_voterAddr' exists in the white list
+     */
+    modifier voterNameMandatory(string memory _voterName) {
+        require(!_voterName.equals(""), "The voter name is mandatory!");
+        _;
+    }
+
+    /**
      * Modifier that indicates if the workflow has the same value than the one given in parameter
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
         require(_workflowVoteStatus == _status, "You are not granted to vote due to bad workflow status!");
+        _;
+    }
+
+    /**
+     * Modifier that indicate the owner can re-open the session proposal just after the 'RegisteringVoters' status 
+     * OR just after cloing it in order to re-open it and add more proposals
+     */
+    modifier canOpenStartSessionProposals() {
+        require(
+            _workflowVoteStatus == WorkflowStatus.RegisteringVoters
+            || _workflowVoteStatus == WorkflowStatus.ProposalsRegistrationEnded , "You can not open the session recording proposals");
         _;
     }
 
@@ -199,8 +218,15 @@ contract Voting is Ownable {
 
     /**
      * Add a voter in the whiteList
+     *    3 conditions : 
+     *       - Only owner can do it
+     *       - Impossible to have duplicate voter in the whitelist
+     *       - The name of the voter is mandatory
      */
-    function addVoterIndWhiteList(address _voterAddr, string memory _voterName) external onlyOwner checkDuplicateVoter(_voterAddr) {
+    function addVoterIndWhiteList(address _voterAddr, string memory _voterName) external 
+        onlyOwner 
+        checkDuplicateVoter(_voterAddr) 
+        voterNameMandatory(_voterName) {
         //The first time this function is called, the admin is added to the white list 
         // and the worflow status becomes 'RegisteringVoters'
         if (_voters.length == 0) {
@@ -217,11 +243,11 @@ contract Voting is Ownable {
      * Start recording proposals of voters
      *    2 conditions : 
      *       - Only owner can do it
-     *       - the current workflow must be "RegisteringVoters"
+     *       - the current workflow must be "RegisteringVoters" or 
      */
     function startRecordingSessionProposal() external 
         onlyOwner 
-        onlyWhenWorkflowStatusIs(WorkflowStatus.RegisteringVoters) {
+        canOpenStartSessionProposals {
 
         _setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationStarted);
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
@@ -424,7 +450,6 @@ contract Voting is Ownable {
         else {
             return true;
         }
-
     }
 
 }
