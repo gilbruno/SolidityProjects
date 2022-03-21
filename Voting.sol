@@ -97,7 +97,7 @@ contract Voting is Ownable {
     }
 
     /**
-     * Modifier that indicates if the '_voterAddr' exists in the white list
+     * Modifier that indicates if the workflow has the same value than the one given in parameter
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
         require(_workflowVoteStatus == _status, "You are not granted to vote due to bad workflow status!");
@@ -123,7 +123,7 @@ contract Voting is Ownable {
     }
 
     /**
-     * Modifier that indicates if the '_voterAddr' exists in the white list
+     * Modifier that indicates if the given proposal exists
      */
     modifier checkProposalExists(string memory _proposal)
     {
