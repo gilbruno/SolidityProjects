@@ -232,7 +232,9 @@ contract Voting is Ownable {
         return p;
     }
 
-
+    /**
+     * Set the state variable of the workflow status to next step
+     */
     function incrementStepWorkflow() internal {
         _workflowVoteStatus = WorkflowStatus(uint(_workflowVoteStatus) + 1);
     }
