@@ -39,6 +39,7 @@ contract Voting is Ownable {
         bool isRegistered;
         bool hasVoted;
         uint votedProposalId;
+        string voterName;
     }
 
     struct Proposal {
@@ -63,8 +64,9 @@ contract Voting is Ownable {
     event ProposalRegistered(uint proposalId);
     event Voted (address voter, uint proposalId);
 
-
+    //---------------------------------------
     //------ MODIFIERS ----------------------
+    //---------------------------------------
     /**
      * Modifier to check if a voter exists in the white list
      */
@@ -170,22 +172,35 @@ contract Voting is Ownable {
     /**
      * Get the winner
      */
-    function getWinner() external view winnerFound returns (uint) {
+    function getWinner() public view winnerFound returns (uint) {
         return winningProposalId;
     }
+
+    /**
+     * Get details of the proposal winner
+     */
+    function getProposalWinner() external view winnerFound returns (Proposal memory) {
+        uint idWinner = getWinner(); 
+        Proposal memory p = Proposal ({
+            description:_proposals[idWinner].description, 
+            voteCount:_proposals[idWinner].voteCount, 
+            blockTimestampCount:_proposals[idWinner].blockTimestampCount});
+        return p;
+    }
+
 
     /**
      * The admin can vote as well, so he must be added in the white list
      */
     function _addAdminInWhiteList() private {
-        whiteList[owner()] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0});
+        whiteList[owner()] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0, voterName:'Gilles Bruno'});
         _voters.push(owner());
     }
 
     /**
      * Add a voter in the whiteList
      */
-    function addVoterIndWhiteList(address _voterAddr) external onlyOwner checkDuplicateVoter(_voterAddr) {
+    function addVoterIndWhiteList(address _voterAddr, string memory _voterName) external onlyOwner checkDuplicateVoter(_voterAddr) {
         //The first time this function is called, the admin is added to the white list 
         // and the worflow status becomes 'RegisteringVoters'
         if (_voters.length == 0) {
@@ -193,7 +208,7 @@ contract Voting is Ownable {
             _setWorkflowVoteStatus(WorkflowStatus.RegisteringVoters);
         }
         require(_workflowVoteStatus == WorkflowStatus.RegisteringVoters, "You are not granted to add voter in the white list due to bad workflow status");
-        whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0});
+        whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0, voterName:_voterName});
         _voters.push(_voterAddr);
         emit VoterRegistered(_voterAddr);
     }
