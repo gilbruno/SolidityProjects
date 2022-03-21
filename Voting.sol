@@ -28,10 +28,10 @@ contract Voting is Ownable {
     //------ STATE VARIABLES ------------------
     uint winningProposalId;
     mapping(address => Voter) public whiteList;
-    address[] private voters; //Array of voters that are in the white list
-    uint[] private winners; //Array to handle ex aequo winners
-    Proposal[] private proposals;
-    WorkflowStatus private workflowVoteStatus;
+    address[] private _voters; //Array of voters that are in the white list
+    uint[] private _winners; //Array to handle ex aequo winners
+    Proposal[] private _proposals;
+    WorkflowStatus private _workflowVoteStatus;
     bool boolWinnerFound;
 
     //------ EVENTS ----------------------
@@ -100,7 +100,7 @@ contract Voting is Ownable {
      * Modifier that indicates if the '_voterAddr' exists in the white list
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
-        require(workflowVoteStatus == _status, "You are not granted to vote due to bad workflow status!");
+        require(_workflowVoteStatus == _status, "You are not granted to vote due to bad workflow status!");
         _;
     }
 
@@ -109,7 +109,7 @@ contract Voting is Ownable {
      */
     modifier atLeastOneProposal()
     {
-        require(proposals.length > 0, "There must be at least one proposal");
+        require(_proposals.length > 0, "There must be at least one proposal");
         _;
     }
 
@@ -127,7 +127,7 @@ contract Voting is Ownable {
      */
     modifier checkProposalExists(string memory _proposal)
     {
-        require(workflowVoteStatus == WorkflowStatus.ProposalsRegistrationStarted);
+        require(_workflowVoteStatus == WorkflowStatus.ProposalsRegistrationStarted);
         _;
     }
 
@@ -156,14 +156,14 @@ contract Voting is Ownable {
      * Function getter to retrieve the array of voters
      */
     function getVoters() external view returns (address[] memory) {
-        return voters;
+        return _voters;
     }
 
     /**
      * Function getter to retrieve the array of proposals
      */
     function getProposals() external view returns (Proposal[] memory) {
-        return proposals;
+        return _proposals;
     }
 
     /**
@@ -176,9 +176,9 @@ contract Voting is Ownable {
     /**
      * The admin can vote as well, so he must be added in the white list
      */
-    function addAdminInWhiteList() private {
+    function _addAdminInWhiteList() private {
         whiteList[owner()] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0});
-        voters.push(owner());
+        _voters.push(owner());
     }
 
     /**
@@ -187,13 +187,13 @@ contract Voting is Ownable {
     function addVoterIndWhiteList(address _voterAddr) external onlyOwner checkDuplicateVoter(_voterAddr) {
         //The first time this function is called, the admin is added to the white list 
         // and the worflow status becomes 'RegisteringVoters'
-        if (voters.length == 0) {
-            addAdminInWhiteList();
+        if (_voters.length == 0) {
+            _addAdminInWhiteList();
             _setWorkflowVoteStatus(WorkflowStatus.RegisteringVoters);
         }
-        require(workflowVoteStatus == WorkflowStatus.RegisteringVoters, "You are not granted to add voter in the white list due to bad workflow status");
+        require(_workflowVoteStatus == WorkflowStatus.RegisteringVoters, "You are not granted to add voter in the white list due to bad workflow status");
         whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0});
-        voters.push(_voterAddr);
+        _voters.push(_voterAddr);
         emit VoterRegistered(_voterAddr);
     }
 
@@ -222,7 +222,7 @@ contract Voting is Ownable {
         onlyGrantedVoters(msg.sender) 
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
         checkDuplicateProposal(_proposal) {
-            proposals.push(Proposal({description:_proposal, voteCount:0, blockTimestampCount:0}));
+            _proposals.push(Proposal({description:_proposal, voteCount:0, blockTimestampCount:0}));
     }
 
     /**
@@ -315,10 +315,10 @@ contract Voting is Ownable {
     function _setWinners() private {
         boolWinnerFound = true;
         uint maxCount = 0;
-        for (uint index = 0; index < proposals.length; index++) {
-            if (proposals[index].voteCount >= maxCount) {
-                maxCount = proposals[index].voteCount;
-                winners.push(index);       
+        for (uint index = 0; index < _proposals.length; index++) {
+            if (_proposals[index].voteCount >= maxCount) {
+                maxCount = _proposals[index].voteCount;
+                _winners.push(index);       
             }
         }
     }
@@ -332,15 +332,15 @@ contract Voting is Ownable {
      * because it means that many voters vote for him until the best vote count before others
      */
     function _setWinner() private {
-        if (winners.length == 1) {
-            winningProposalId = winners[0];        
+        if (_winners.length == 1) {
+            winningProposalId = _winners[0];        
         }
         else {
             //I have to find the min blockTimestampCount of proposals
             uint minBlockTimestampCount = 9999999999;
-            for (uint256 index = 0; index < winners.length; index++) {
-                if (proposals[index].blockTimestampCount < minBlockTimestampCount) {
-                    minBlockTimestampCount = proposals[index].blockTimestampCount;
+            for (uint256 index = 0; index < _winners.length; index++) {
+                if (_proposals[index].blockTimestampCount < minBlockTimestampCount) {
+                    minBlockTimestampCount = _proposals[index].blockTimestampCount;
                     winningProposalId = index;
                 }
             }
@@ -351,10 +351,10 @@ contract Voting is Ownable {
      * Function that increment the voting count of a proposal
      */
     function _incrementVotingAndTimestampCount(string memory _proposal) private {
-        for (uint index = 0; index < proposals.length; index++) {
-            if (_proposal.equals(proposals[index].description)) {
-                proposals[index].voteCount++;
-                proposals[index].blockTimestampCount += block.timestamp;
+        for (uint index = 0; index < _proposals.length; index++) {
+            if (_proposal.equals(_proposals[index].description)) {
+                _proposals[index].voteCount++;
+                _proposals[index].blockTimestampCount += block.timestamp;
                 break;
             }
         }
@@ -365,8 +365,8 @@ contract Voting is Ownable {
      */
     function _getVoteId(string memory _proposal) private view returns(uint) {
         uint result;
-        for (uint index = 0; index < proposals.length; index++) {
-            if (_proposal.equals(proposals[index].description)) {
+        for (uint index = 0; index < _proposals.length; index++) {
+            if (_proposal.equals(_proposals[index].description)) {
                 result = index;
             }
         }
@@ -377,7 +377,7 @@ contract Voting is Ownable {
      * Function Setter that set the new value for the state variable "workflowVoteStatus"
      */
     function _setWorkflowVoteStatus(WorkflowStatus _newStatus) private {
-        workflowVoteStatus = _newStatus;
+        _workflowVoteStatus = _newStatus;
     }
 
     /**
@@ -385,8 +385,8 @@ contract Voting is Ownable {
      */
     function _proposalExist(string memory _proposal) private view returns(bool) {
         bool result = false;
-        for (uint index = 0; index < proposals.length; index++) {
-            if (_proposal.equals(proposals[index].description)) {
+        for (uint index = 0; index < _proposals.length; index++) {
+            if (_proposal.equals(_proposals[index].description)) {
                 result = true;
                 break;
             }
@@ -399,8 +399,8 @@ contract Voting is Ownable {
      */
     function _atLeast1Vote() private view returns (bool) {
         uint totalVoteCount;
-        for (uint i = 0; i < proposals.length; i++) {
-            totalVoteCount += proposals[i].voteCount;
+        for (uint i = 0; i < _proposals.length; i++) {
+            totalVoteCount += _proposals[i].voteCount;
         }
         if (totalVoteCount == 0) {
             return false;
