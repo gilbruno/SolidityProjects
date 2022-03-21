@@ -117,6 +117,14 @@ contract Voting is Ownable {
     }
 
     /**
+     * Modifier that requires a mandatory voter address
+     */
+    modifier voterAddressMandatory(address _voterAddress) {
+        require(_voterAddress != address(0), "The voter address is mandatory!");
+        _;
+    }
+
+    /**
      * Modifier that indicates if the workflow has the same value than the one given in parameter
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
@@ -260,7 +268,8 @@ contract Voting is Ownable {
     function addVoterIndWhiteList(address _voterAddr, string memory _voterName) external 
         onlyOwner 
         checkDuplicateVoter(_voterAddr) 
-        voterNameMandatory(_voterName) {
+        voterNameMandatory(_voterName) 
+        voterAddressMandatory (_voterAddr) {
         //The first time this function is called, the admin is added to the white list 
         // and the worflow status becomes 'RegisteringVoters'
         if (_voters.length == 0) {
