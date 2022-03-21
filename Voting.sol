@@ -127,6 +127,15 @@ contract Voting is Ownable {
     }
 
     /**
+     * Modifier that reverts the transaction if there are no proposal in the transaction
+     */
+    modifier proposalMandatory(string memory _proposal)
+    {
+        require(!_proposal.equals(""), "The proposal is mandatory!");
+        _;
+    }
+
+    /**
      * Modifier that reverts the transaction if there are no proposal when the owner close the proposal recording
      */
     modifier atLeastOneProposal()
@@ -263,7 +272,8 @@ contract Voting is Ownable {
     function votersPushProposals(string memory _proposal) external 
         onlyGrantedVoters(msg.sender) 
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
-        checkDuplicateProposal(_proposal) {
+        checkDuplicateProposal(_proposal)
+        proposalMandatory(_proposal) {
             _proposals.push(Proposal({description:_proposal, voteCount:0, blockTimestampCount:0}));
     }
 
@@ -272,7 +282,7 @@ contract Voting is Ownable {
      * 3 conditions : 
      *     - only the owner can do it
      *     - the current workflow must be "ProposalsRegistrationStarted"
-     *     - There must be at least 1 proposal
+     *     - There must be at least 1 proposal otherwise it's impossible to vote
      */
     function endRecordingSessionProposal() external 
         onlyOwner 
