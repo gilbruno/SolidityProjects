@@ -29,7 +29,7 @@ contract Voting is Ownable {
     uint winningProposalId;
     mapping(address => Voter) public whiteList;
     address[] private _voters; //Array of voters that are in the white list
-    uint[] public _winners; //Array to handle ex aequo winners
+    uint[] private _winners; //Array to handle ex aequo winners
     Proposal[] private _proposals;
     WorkflowStatus public _workflowVoteStatus;
     bool boolWinnerFound;
