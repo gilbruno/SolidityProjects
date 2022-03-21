@@ -68,6 +68,15 @@ contract Voting is Ownable {
     //------ MODIFIERS ----------------------
     //---------------------------------------
     /**
+     * Modifier that increment the workflow vote status
+     */
+    modifier nextWorkflowStatus() {
+        _;
+        incrementStepWorkflow();
+        emit WorkflowStatusChange(getPreviousWorkflowStatus(), _workflowVoteStatus);
+    }
+
+    /**
      * Modifier to check if a voter exists in the white list
      */
     modifier checkDuplicateVoter(address _voterAddr) {
@@ -205,6 +214,13 @@ contract Voting is Ownable {
     }
 
     /**
+     * Get the previous workflow status
+     */
+    function getPreviousWorkflowStatus() internal view returns (WorkflowStatus) {
+        return WorkflowStatus(uint(_workflowVoteStatus) - 1);
+    }
+
+    /**
      * Get details of the proposal winner
      */
     function getProposalWinner() external view winnerFound returns (Proposal memory) {
@@ -216,6 +232,10 @@ contract Voting is Ownable {
         return p;
     }
 
+
+    function incrementStepWorkflow() internal {
+        _workflowVoteStatus = WorkflowStatus(uint(_workflowVoteStatus) + 1);
+    }
 
     /**
      * The admin can vote as well, so he must be added in the white list
@@ -256,18 +276,18 @@ contract Voting is Ownable {
      */
     function startRecordingSessionProposal() external 
         onlyOwner 
-        canOpenStartSessionProposals {
+        canOpenStartSessionProposals
+        nextWorkflowStatus {
 
-        _setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationStarted);
-        emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
     }
 
     /**
      * Granted voters give their proposals
-     *    3 conditions : 
+     *    4 conditions : 
      *       - Only Granted voters can do it
      *       - the current workflow must be "ProposalsRegistrationStarted"
      *       - A proposal must be unique so exist the function when a proposal already exists
+     *       - A proposal is mandatory
      */
     function votersPushProposals(string memory _proposal) external 
         onlyGrantedVoters(msg.sender) 
@@ -287,10 +307,9 @@ contract Voting is Ownable {
     function endRecordingSessionProposal() external 
         onlyOwner 
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
-        atLeastOneProposal {
+        atLeastOneProposal 
+        nextWorkflowStatus {
 
-        _setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationEnded);
-        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded);
     }
 
     /**
@@ -301,10 +320,9 @@ contract Voting is Ownable {
      */
     function startRecordingVote() external 
         onlyOwner 
-        onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationEnded) {
+        onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationEnded) 
+        nextWorkflowStatus {
 
-        _setWorkflowVoteStatus(WorkflowStatus.VotingSessionStarted);
-        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted);
     }
 
     /**
@@ -337,10 +355,9 @@ contract Voting is Ownable {
     function endRecordingVote() external 
         onlyOwner 
         onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionStarted) 
-        atLeastOneVote {
+        atLeastOneVote 
+        nextWorkflowStatus {
 
-        _setWorkflowVoteStatus(WorkflowStatus.VotingSessionEnded);
-        emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, WorkflowStatus.VotingSessionEnded);
     }
 
     /**
@@ -351,10 +368,8 @@ contract Voting is Ownable {
      */
     function countVotes() external 
         onlyOwner 
-        onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionEnded) {
-
-        _setWorkflowVoteStatus(WorkflowStatus.VotesTallied);
-        emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
+        onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionEnded) 
+        nextWorkflowStatus {
 
         _setWinners();
         _setWinner();
