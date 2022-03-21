@@ -109,7 +109,7 @@ contract Voting is Ownable {
     }
 
     /**
-     * Modifier that indicates if the '_voterAddr' exists in the white list
+     * Modifier that requires a mandatory voter name
      */
     modifier voterNameMandatory(string memory _voterName) {
         require(!_voterName.equals(""), "The voter name is mandatory!");
@@ -193,6 +193,20 @@ contract Voting is Ownable {
      */
     function getProposals() external view returns (Proposal[] memory) {
         return _proposals;
+    }
+
+    /**
+     * Get the proposal id by name
+     */
+    function getProposalId(string memory _proposal) private view returns (uint) {
+        uint proposalId;
+        for (uint index = 0; index < _proposals.length; index++) {
+            if(_proposal.equals(_proposals[index].description)) {
+                proposalId = index;
+                break;
+            }
+        }
+        return proposalId;
     }
 
     /**
@@ -285,7 +299,9 @@ contract Voting is Ownable {
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
         checkDuplicateProposal(_proposal)
         proposalMandatory(_proposal) {
+
             _proposals.push(Proposal({description:_proposal, voteCount:0, blockTimestampCount:0}));
+            emit ProposalRegistered(_proposals.length-1);
     }
 
     /**
@@ -334,6 +350,8 @@ contract Voting is Ownable {
         whiteList[msg.sender].hasVoted = true;
         whiteList[msg.sender].votedProposalId = _getVoteId(_proposal);
         _incrementVotingAndTimestampCount(_proposal);
+
+        emit Voted (msg.sender, getProposalId(_proposal));
     }
 
     /**
