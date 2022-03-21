@@ -31,7 +31,7 @@ contract Voting is Ownable {
     address[] private _voters; //Array of voters that are in the white list
     uint[] private _winners; //Array to handle ex aequo winners
     Proposal[] private _proposals;
-    WorkflowStatus private _workflowVoteStatus;
+    WorkflowStatus public _workflowVoteStatus;
     bool boolWinnerFound;
 
     //------ STRUCT ----------------------
@@ -121,17 +121,6 @@ contract Voting is Ownable {
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
         require(_workflowVoteStatus == _status, "You are not granted to do this due to bad workflow status!");
-        _;
-    }
-
-    /**
-     * Modifier that indicate the owner can re-open the session proposal just after the 'RegisteringVoters' status 
-     * OR just after cloing it in order to re-open it and add more proposals
-     */
-    modifier canOpenStartSessionProposals() {
-        require(
-            _workflowVoteStatus == WorkflowStatus.RegisteringVoters
-            || _workflowVoteStatus == WorkflowStatus.ProposalsRegistrationEnded , "You can not open the session recording proposals");
         _;
     }
 
@@ -278,7 +267,7 @@ contract Voting is Ownable {
      */
     function startRecordingSessionProposal() external 
         onlyOwner 
-        canOpenStartSessionProposals
+        onlyWhenWorkflowStatusIs(WorkflowStatus.RegisteringVoters) 
         nextWorkflowStatus {
 
     }
