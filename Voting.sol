@@ -120,7 +120,7 @@ contract Voting is Ownable {
      * Modifier that indicates if the workflow has the same value than the one given in parameter
      */
     modifier onlyWhenWorkflowStatusIs(WorkflowStatus _status) {
-        require(_workflowVoteStatus == _status, "You are not granted to vote due to bad workflow status!");
+        require(_workflowVoteStatus == _status, "You are not granted to do this due to bad workflow status!");
         _;
     }
 
