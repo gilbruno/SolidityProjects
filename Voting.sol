@@ -158,7 +158,7 @@ contract Voting is Ownable {
      */
     modifier onlyOneVotePerVoter(address _voterAddr)
     {
-        require(whiteList[_voterAddr].hasVoted == false, "You already vote");
+        require(whiteList[_voterAddr].hasVoted == false, "You already voted and can vote only once!");
         _;
     }
 
