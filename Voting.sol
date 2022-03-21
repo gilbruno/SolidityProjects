@@ -4,11 +4,9 @@ pragma solidity ^0.8.12;
 
 import "./node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
-
 /**
- * TODO :: Be more accurate on functions visibility
+ * Library that enables me to handle string type
  */
-
 library StringLibrary {
 
     // Function that tests equality between 2 strings
@@ -20,7 +18,9 @@ library StringLibrary {
     }
 }    
 
-
+/**
+ * Voting contract
+ */
 contract Voting is Ownable {
 
     using StringLibrary for string;
@@ -33,12 +33,6 @@ contract Voting is Ownable {
     Proposal[] private _proposals;
     WorkflowStatus private _workflowVoteStatus;
     bool boolWinnerFound;
-
-    //------ EVENTS ----------------------
-    event VoterRegistered(address voterAddress); 
-    event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
-    event ProposalRegistered(uint proposalId);
-    event Voted (address voter, uint proposalId);
 
     //------ STRUCT ----------------------
     struct Voter {
@@ -62,6 +56,13 @@ contract Voting is Ownable {
         VotingSessionEnded,
         VotesTallied
     }
+
+    //------ EVENTS ----------------------
+    event VoterRegistered(address voterAddress); 
+    event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
+    event ProposalRegistered(uint proposalId);
+    event Voted (address voter, uint proposalId);
+
 
     //------ MODIFIERS ----------------------
     /**
