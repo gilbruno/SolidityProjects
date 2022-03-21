@@ -29,7 +29,7 @@ contract Voting is Ownable {
     uint winningProposalId;
     mapping(address => Voter) public whiteList;
     address[] private _voters; //Array of voters that are in the white list
-    uint[] private _winners; //Array to handle ex aequo winners
+    uint[] public _winners; //Array to handle ex aequo winners
     Proposal[] private _proposals;
     WorkflowStatus public _workflowVoteStatus;
     bool boolWinnerFound;
@@ -412,7 +412,7 @@ contract Voting is Ownable {
      * If length = 1 => No ex aequo. Only 1 winner.
      * If length > 1 => There are many ex aequo winners. 
      * I decided the folowing rule : The winner is the proposal that have the minimum blockTimestampCount.
-     * because it means that many voters vote for him until the best vote count before others
+     * because it means that the proposal reached the best score before others proposals
      */
     function _setWinner() private {
         if (_winners.length == 1) {
@@ -422,9 +422,10 @@ contract Voting is Ownable {
             //I have to find the min blockTimestampCount of proposals
             uint minBlockTimestampCount = 9999999999;
             for (uint256 index = 0; index < _winners.length; index++) {
-                if (_proposals[index].blockTimestampCount < minBlockTimestampCount) {
-                    minBlockTimestampCount = _proposals[index].blockTimestampCount;
-                    winningProposalId = index;
+                uint proposalIndex = _winners[index];
+                if (_proposals[proposalIndex].blockTimestampCount < minBlockTimestampCount) {
+                    minBlockTimestampCount = _proposals[proposalIndex].blockTimestampCount;
+                    winningProposalId = proposalIndex;
                 }
             }
         }
