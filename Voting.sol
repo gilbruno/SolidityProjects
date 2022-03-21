@@ -76,7 +76,7 @@ contract Voting is Ownable {
      * A proposal must be unique
      */
     modifier checkDuplicateProposal(string memory _proposal) {
-        require(proposalExist(_proposal) == false, "The proposal already exists!");
+        require(_proposalExist(_proposal) == false, "The proposal already exists!");
         _;
     }
 
@@ -84,7 +84,7 @@ contract Voting is Ownable {
      * A proposal must exist
      */
     modifier checkValidProposal(string memory _proposal) {
-        require(proposalExist(_proposal) == true, "The proposal does not exists!");
+        require(_proposalExist(_proposal) == true, "The proposal does not exists!");
         _;
     }
 
@@ -118,7 +118,7 @@ contract Voting is Ownable {
      */
     modifier atLeastOneVote()
     {
-        require(atLeast1Vote(), "There must be at least one vote");
+        require(_atLeast1Vote(), "There must be at least one vote");
         _;
     }
 
@@ -189,7 +189,7 @@ contract Voting is Ownable {
         // and the worflow status becomes 'RegisteringVoters'
         if (voters.length == 0) {
             addAdminInWhiteList();
-            setWorkflowVoteStatus(WorkflowStatus.RegisteringVoters);
+            _setWorkflowVoteStatus(WorkflowStatus.RegisteringVoters);
         }
         require(workflowVoteStatus == WorkflowStatus.RegisteringVoters, "You are not granted to add voter in the white list due to bad workflow status");
         whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0});
@@ -207,7 +207,7 @@ contract Voting is Ownable {
         onlyOwner 
         onlyWhenWorkflowStatusIs(WorkflowStatus.RegisteringVoters) {
 
-        setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationStarted);
+        _setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationStarted);
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
     }
 
@@ -237,7 +237,7 @@ contract Voting is Ownable {
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationStarted)
         atLeastOneProposal {
 
-        setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationEnded);
+        _setWorkflowVoteStatus(WorkflowStatus.ProposalsRegistrationEnded);
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded);
     }
 
@@ -251,7 +251,7 @@ contract Voting is Ownable {
         onlyOwner 
         onlyWhenWorkflowStatusIs(WorkflowStatus.ProposalsRegistrationEnded) {
 
-        setWorkflowVoteStatus(WorkflowStatus.VotingSessionStarted);
+        _setWorkflowVoteStatus(WorkflowStatus.VotingSessionStarted);
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted);
     }
 
@@ -271,8 +271,8 @@ contract Voting is Ownable {
         checkValidProposal(_proposal) {
 
         whiteList[msg.sender].hasVoted = true;
-        whiteList[msg.sender].votedProposalId = getVoteId(_proposal);
-        incrementVotingAndTimestampCount(_proposal);
+        whiteList[msg.sender].votedProposalId = _getVoteId(_proposal);
+        _incrementVotingAndTimestampCount(_proposal);
     }
 
     /**
@@ -287,7 +287,7 @@ contract Voting is Ownable {
         onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionStarted) 
         atLeastOneVote {
 
-        setWorkflowVoteStatus(WorkflowStatus.VotingSessionEnded);
+        _setWorkflowVoteStatus(WorkflowStatus.VotingSessionEnded);
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, WorkflowStatus.VotingSessionEnded);
     }
 
@@ -301,18 +301,18 @@ contract Voting is Ownable {
         onlyOwner 
         onlyWhenWorkflowStatusIs(WorkflowStatus.VotingSessionEnded) {
 
-        setWorkflowVoteStatus(WorkflowStatus.VotesTallied);
+        _setWorkflowVoteStatus(WorkflowStatus.VotesTallied);
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
 
-        setWinners();
-        setWinner();
+        _setWinners();
+        _setWinner();
     }
 
     /**
      * Function that sets the potential winners if ex aequo results
      * Loop through array of Proposals
      */
-    function setWinners() private {
+    function _setWinners() private {
         boolWinnerFound = true;
         uint maxCount = 0;
         for (uint index = 0; index < proposals.length; index++) {
@@ -331,7 +331,7 @@ contract Voting is Ownable {
      * I decided the folowing rule : The winner is the proposal that have the minimum blockTimestampCount.
      * because it means that many voters vote for him until the best vote count before others
      */
-    function setWinner() private {
+    function _setWinner() private {
         if (winners.length == 1) {
             winningProposalId = winners[0];        
         }
@@ -350,7 +350,7 @@ contract Voting is Ownable {
     /**
      * Function that increment the voting count of a proposal
      */
-    function incrementVotingAndTimestampCount(string memory _proposal) private {
+    function _incrementVotingAndTimestampCount(string memory _proposal) private {
         for (uint index = 0; index < proposals.length; index++) {
             if (_proposal.equals(proposals[index].description)) {
                 proposals[index].voteCount++;
@@ -361,9 +361,9 @@ contract Voting is Ownable {
     }
 
     /**
-     * Function that retrieves the index of the proposal
+     * Function that retrieves the index of the proposal in the array of proposals
      */
-    function getVoteId(string memory _proposal) private view returns(uint) {
+    function _getVoteId(string memory _proposal) private view returns(uint) {
         uint result;
         for (uint index = 0; index < proposals.length; index++) {
             if (_proposal.equals(proposals[index].description)) {
@@ -376,14 +376,14 @@ contract Voting is Ownable {
     /**
      * Function Setter that set the new value for the state variable "workflowVoteStatus"
      */
-    function setWorkflowVoteStatus(WorkflowStatus _newStatus) private {
+    function _setWorkflowVoteStatus(WorkflowStatus _newStatus) private {
         workflowVoteStatus = _newStatus;
     }
 
     /**
      * Function that returns true if a proposal already exists
      */
-    function proposalExist(string memory _proposal) private view returns(bool) {
+    function _proposalExist(string memory _proposal) private view returns(bool) {
         bool result = false;
         for (uint index = 0; index < proposals.length; index++) {
             if (_proposal.equals(proposals[index].description)) {
@@ -397,7 +397,7 @@ contract Voting is Ownable {
     /**
      * Function that returns true if there are at leastone vote
      */
-    function atLeast1Vote() private view returns (bool) {
+    function _atLeast1Vote() private view returns (bool) {
         uint totalVoteCount;
         for (uint i = 0; i < proposals.length; i++) {
             totalVoteCount += proposals[i].voteCount;
