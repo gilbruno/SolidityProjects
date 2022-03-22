@@ -16,6 +16,11 @@ library StringLibrary {
         }
         return false;
     }
+
+    // Concat 2 strings
+    function concat(string memory a,string memory b) public pure returns (string memory){
+        return string(abi.encodePacked(a,' ',b));
+    } 
 }    
 
 /**
@@ -27,6 +32,7 @@ contract Voting is Ownable {
 
     //------ STATE VARIABLES ------------------
     uint winningProposalId;
+    uint defaultProposalId = 9999999999;
     mapping(address => Voter) public whiteList;
     address[] private _voters; //Array of voters that are in the white list
     uint[] private _winners; //Array to handle ex aequo winners
@@ -63,6 +69,7 @@ contract Voting is Ownable {
     event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
     event ProposalRegistered(uint proposalId);
     event Voted (address voter, uint proposalId);
+    event Log(string str);
 
     //---------------------------------------
     //------ MODIFIERS ----------------------
@@ -204,6 +211,25 @@ contract Voting is Ownable {
     }
 
     /**
+     * Function getter to retrieve the proposal voted by a voter
+     */
+    function getVote(address _addr) external returns (string memory) {
+        uint idProposal = whiteList[_addr].votedProposalId;
+        string memory votedProposal = _proposals[idProposal].description;
+        string memory msgLog = 'Voter ';
+        msgLog = msgLog.concat(whiteList[_addr].voterName);
+        msgLog = msgLog.concat(' voted for ');
+        if (idProposal == defaultProposalId) {
+            msgLog = msgLog.concat('nobody');
+        }
+        else {
+            msgLog = msgLog.concat(votedProposal);
+        }
+        emit Log(msgLog);
+        return votedProposal;
+    }
+
+    /**
      * Get the proposal id by name
      */
     function getProposalId(string memory _proposal) private view returns (uint) {
@@ -254,7 +280,7 @@ contract Voting is Ownable {
      * The admin can vote as well, so he must be added in the white list
      */
     function _addAdminInWhiteList() private {
-        whiteList[owner()] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0, voterName:'Gilles Bruno'});
+        whiteList[owner()] = Voter({isRegistered:true, hasVoted:false, votedProposalId:defaultProposalId, voterName:'Gilles Bruno'});
         _voters.push(owner());
     }
 
@@ -277,7 +303,7 @@ contract Voting is Ownable {
             _setWorkflowVoteStatus(WorkflowStatus.RegisteringVoters);
         }
         require(_workflowVoteStatus == WorkflowStatus.RegisteringVoters, "You are not granted to add voter in the white list due to bad workflow status");
-        whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:0, voterName:_voterName});
+        whiteList[_voterAddr] = Voter({isRegistered:true, hasVoted:false, votedProposalId:defaultProposalId, voterName:_voterName});
         _voters.push(_voterAddr);
         emit VoterRegistered(_voterAddr);
     }
@@ -441,7 +467,7 @@ contract Voting is Ownable {
     }    
 
     /**
-     * Function that increment the voting count of a proposal
+     * Function that increment the voting count and the blockTimestampCount  of a proposal
      */
     function _incrementVotingAndTimestampCount(string memory _proposal) private {
         for (uint index = 0; index < _proposals.length; index++) {
