@@ -32,7 +32,7 @@ contract Voting is Ownable {
 
     //------ STATE VARIABLES ------------------
     uint winningProposalId;
-    uint defaultProposalId = 9999999999;
+    uint private defaultProposalId = 9999999999;
     mapping(address => Voter) public whiteList;
     address[] private _voters; //Array of voters that are in the white list
     uint[] private _winners; //Array to handle ex aequo winners
