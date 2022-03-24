@@ -9,9 +9,13 @@ In this project, you will write a voting smart contract for a small organization
 Voters, all known to the organization, are whitelisted by their Ethereum address, can submit new proposals during a proposal registration session, and can vote on proposals during the voting session.
 
 ✔️ The vote is not secret
+
 ✔️ Each voter can see the votes of others
+
 ✔️ The winner is determined by simple majority
+
 ✔️ The proposal that gets the most votes wins.## Install _OpenZeppelin_ with _NPM_
+
 
 👉 The voting process:
 
