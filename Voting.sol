@@ -3,6 +3,8 @@
 pragma solidity ^0.8.12;
 
 import "./node_modules/@openzeppelin/contracts/access/Ownable.sol";
+//To compile in Remix add this line instead
+//import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 
 /**
  * Library that enables me to handle string type
